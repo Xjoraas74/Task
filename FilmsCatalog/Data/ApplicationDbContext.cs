@@ -13,5 +13,13 @@ namespace FilmsCatalog.Data
             : base(options)
         {
         }
-    }
+
+		DbSet<Film> Films { get; set; }
+
+		protected override void OnModelCreating(ModelBuilder builder)
+		{
+			base.OnModelCreating(builder);
+			builder.Entity<Film>().HasOne(x => x.UserSender).WithMany(x => x.Films).OnDelete(DeleteBehavior.Restrict);
+		}
+	}
 }
