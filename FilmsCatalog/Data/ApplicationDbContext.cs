@@ -14,7 +14,7 @@ namespace FilmsCatalog.Data
         {
         }
 
-		DbSet<Film> Films { get; set; }
+		public DbSet<Film> Films { get; set; }
 
 		protected override void OnModelCreating(ModelBuilder builder)
 		{
