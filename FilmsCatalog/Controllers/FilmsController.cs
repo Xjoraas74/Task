@@ -53,7 +53,6 @@ namespace FilmsCatalog.Controllers
             }
 
             var film = await _context.Films
-                .Include(f => f.UserSender)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (film == null)
             {
