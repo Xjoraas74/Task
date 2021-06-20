@@ -22,7 +22,7 @@ namespace FilmsCatalog.Controllers
         // GET: Films
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Films.Include(f => f.UserSender);
+            var applicationDbContext = _context.Films;//.Include(f => f.UserSender);
             return View(await applicationDbContext.ToListAsync());
         }
 
