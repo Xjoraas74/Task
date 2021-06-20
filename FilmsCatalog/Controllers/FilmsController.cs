@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Hosting;
 using System.IO;
 using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Http;
 
 namespace FilmsCatalog.Controllers
 {
@@ -40,7 +41,7 @@ namespace FilmsCatalog.Controllers
         // GET: Films
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Films;//.Include(f => f.UserSender);
+            var applicationDbContext = _context.Films;
             return View(await applicationDbContext.ToListAsync());
         }
 
@@ -75,16 +76,9 @@ namespace FilmsCatalog.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(FilmViewModel model)
         {
-            bool posterAdded = model.PosterPhoto != null;
-            string fileName = null;
-            string fileExt = null;
-            if (posterAdded) {
-                fileName = Path.GetFileName(ContentDispositionHeaderValue.Parse(model.PosterPhoto.ContentDisposition).FileName.Trim('"'));
-                fileExt = Path.GetExtension(fileName);
-                if (!AllowedExtensions.Contains(fileExt))
-                {
-                    ModelState.AddModelError(nameof(model.PosterPhoto), "This file type is prohibited");
-                }
+            (bool posterAdded, string fileName, string fileExt) = GetPosterInfo(model);
+            if (posterAdded && !AllowedExtensions.Contains(fileExt)) {
+                ModelState.AddModelError(nameof(model.PosterPhoto), "This file type is prohibited");
             }
             if (ModelState.IsValid)
             {
@@ -96,17 +90,9 @@ namespace FilmsCatalog.Controllers
                     Director = model.Director,
                     UserSenderId = _userManager.GetUserId(HttpContext.User)
                 };
-
                 if (posterAdded) {
-                    film.PosterName = fileName;
-                    var posterPath = Path.Combine(_hostingEnvironment.WebRootPath, "attachments", film.Id.ToString("N") + fileExt);
-                    film.PosterPath = $"/attachments/{film.Id:N}{fileExt}";
-                    using (var fileStream = new FileStream(posterPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read))
-                    {
-                        await model.PosterPhoto.CopyToAsync(fileStream);
-                    }
+                    await SavePosterToFilmEntityAndDisk(film, model.PosterPhoto, fileName, fileExt);
                 }
-
                 _context.Add(film);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -127,8 +113,14 @@ namespace FilmsCatalog.Controllers
             {
                 return NotFound();
             }
-            ViewData["UserSenderId"] = new SelectList(_context.Users, "Id", "Id", film.UserSenderId);
-            return View(film);
+            ViewBag.PosterPath = film.PosterPath;
+            return View(new FilmViewModel
+            {
+                Name = film.Name,
+                Description = film.Description,
+                ReleaseYear = film.ReleaseYear,
+                Director = film.Director
+            });
         }
 
         // POST: Films/Edit/5
@@ -136,40 +128,71 @@ namespace FilmsCatalog.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Guid id, [Bind("Id,Name,Description,ReleaseYear,Director,UserSenderId,PosterName,PosterPath")] Film film)
+        public async Task<IActionResult> Edit(Guid? id, FilmViewModel model)
         {
-            if (id != film.Id)
+            if (id == null)
             {
                 return NotFound();
             }
 
+            var film = await _context.Films.FindAsync(id);
+            if (film == null)
+            {
+                return NotFound();
+            }
+            (bool posterAdded, string fileName, string fileExt) = GetPosterInfo(model);
+            if (posterAdded && !AllowedExtensions.Contains(fileExt))
+            {
+                ModelState.AddModelError(nameof(model.PosterPhoto), "This file type is prohibited");
+            }
             if (ModelState.IsValid)
             {
-                try
+                film.Name = model.Name;
+                film.Description = model.Description;
+                film.ReleaseYear = model.ReleaseYear;
+                film.Director = model.Director;
+                if (posterAdded)
                 {
-                    _context.Update(film);
-                    await _context.SaveChangesAsync();
+                    await SavePosterToFilmEntityAndDisk(film, model.PosterPhoto, fileName, fileExt);
                 }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!FilmExists(film.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
+                _context.Update(film);
+                await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["UserSenderId"] = new SelectList(_context.Users, "Id", "Id", film.UserSenderId);
-            return View(film);
+            ViewBag.PosterPath = film.PosterPath;
+            return View(model);
         }
 
         private bool FilmExists(Guid id)
         {
             return _context.Films.Any(e => e.Id == id);
+        }
+
+        private (bool posterAdded, string, string) GetPosterInfo(FilmViewModel model) {
+            var poster = model.PosterPhoto;
+            if (poster != null)
+            {
+                string fileName = Path.GetFileName(ContentDispositionHeaderValue.Parse(poster.ContentDisposition).FileName.Trim('"'));
+                string fileExt = Path.GetExtension(fileName);
+                return (true, fileName, fileExt);
+            }
+            else {
+                return (false, null, null);
+			}
+        }
+
+        private async Task SavePosterToFilmEntityAndDisk(Film film, IFormFile poster, string fileName, string fileExt) {
+            film.PosterName = fileName;
+            var posterPath = Path.Combine(_hostingEnvironment.WebRootPath, "attachments", film.Id.ToString("N") + fileExt);
+            film.PosterPath = $"/attachments/{film.Id:N}{fileExt}";
+            if (System.IO.File.Exists(posterPath))
+            {
+                System.IO.File.Delete(posterPath);
+            }
+            using (var fileStream = new FileStream(posterPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read))
+            {
+                await poster.CopyToAsync(fileStream);
+            }
         }
     }
 }
