@@ -167,36 +167,6 @@ namespace FilmsCatalog.Controllers
             return View(film);
         }
 
-        // GET: Films/Delete/5
-        public async Task<IActionResult> Delete(Guid? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var film = await _context.Films
-                .Include(f => f.UserSender)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (film == null)
-            {
-                return NotFound();
-            }
-
-            return View(film);
-        }
-
-        // POST: Films/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(Guid id)
-        {
-            var film = await _context.Films.FindAsync(id);
-            _context.Films.Remove(film);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-
         private bool FilmExists(Guid id)
         {
             return _context.Films.Any(e => e.Id == id);
