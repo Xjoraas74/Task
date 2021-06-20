@@ -13,6 +13,7 @@ using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Http;
 using X.PagedList;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FilmsCatalog.Controllers
 {
@@ -65,6 +66,7 @@ namespace FilmsCatalog.Controllers
         }
 
         // GET: Films/Create
+        [Authorize]
         public IActionResult Create()
         {
             return View(new FilmViewModel());
@@ -75,6 +77,7 @@ namespace FilmsCatalog.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize]
         public async Task<IActionResult> Create(FilmViewModel model)
         {
             (bool posterAdded, string fileName, string fileExt) = GetPosterInfo(model);
