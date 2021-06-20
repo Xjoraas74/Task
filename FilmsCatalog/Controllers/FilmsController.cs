@@ -79,7 +79,7 @@ namespace FilmsCatalog.Controllers
         {
             (bool posterAdded, string fileName, string fileExt) = GetPosterInfo(model);
             if (posterAdded && !AllowedExtensions.Contains(fileExt)) {
-                ModelState.AddModelError(nameof(model.PosterPhoto), "This file type is prohibited");
+                ModelState.AddModelError(nameof(model.PosterPhoto), "Недопустимый тип файла");
             }
             if (ModelState.IsValid)
             {

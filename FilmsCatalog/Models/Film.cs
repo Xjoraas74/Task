@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel;
 
 namespace FilmsCatalog.Models
 {
@@ -11,14 +12,18 @@ namespace FilmsCatalog.Models
 		public Guid Id { get; set; } = Guid.NewGuid();
 
 		[Required]
+		[DisplayName("Название")]
 		public String Name { get; set; }
 
 		[Required]
+		[DisplayName("Описание")]
 		public String Description { get; set; }
 
+		[DisplayName("Год выпуска")]
 		public DateTime ReleaseYear { get; set; }
 
 		[Required]
+		[DisplayName("Режиссёр")]
 		public String Director { get; set; }
 
 		[Required]

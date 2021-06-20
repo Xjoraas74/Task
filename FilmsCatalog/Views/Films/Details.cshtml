@@ -3,13 +3,11 @@
 @inject UserManager<User> userManager
 
 @{
-	ViewData["Title"] = "Details";
+	ViewData["Title"] = "О фильме";
 }
 
-<h1>Details</h1>
-
 <div>
-	<h4>Film</h4>
+	<h4>@Model.Name</h4>
 	<hr />
 	<dl class="row">
 		<dt class="col-sm-2">
@@ -28,7 +26,8 @@
 			@Html.DisplayNameFor(model => model.ReleaseYear)
 		</dt>
 		<dd class="col-sm-10">
-			@Html.DisplayFor(model => model.ReleaseYear)
+			@{ string year = Model.ReleaseYear.ToString("yyyy"); }
+			@Html.DisplayFor(model => year)
 		</dd>
 		<dt class="col-sm-2">
 			@Html.DisplayNameFor(model => model.Director)
@@ -49,7 +48,7 @@
 <div>
 	@if (Model.UserSenderId == userManager.GetUserId(User))
 	{
-		<a asp-action="Edit" asp-route-id="@Model.Id">Edit</a> @:|
+		<a asp-action="Edit" asp-route-id="@Model.Id">Редактировать</a> @:|
 	}
-	<a asp-action="Index">Back to List</a>
+	<a asp-action="Index">Каталог</a>
 </div>

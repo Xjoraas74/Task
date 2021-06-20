@@ -80,3 +80,7 @@ body {
 .pagination {
     justify-content: center;
 }
+
+.thumbnail {
+    margin: auto auto 1rem;
+}
