@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using FilmsCatalog.Data;
 using FilmsCatalog.Models;
@@ -13,6 +12,7 @@ using System.IO;
 using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Http;
+using X.PagedList;
 
 namespace FilmsCatalog.Controllers
 {
@@ -39,10 +39,11 @@ namespace FilmsCatalog.Controllers
         }
 
         // GET: Films
-        public async Task<IActionResult> Index()
+        public IActionResult Index(int page = 1)
         {
-            var applicationDbContext = _context.Films;
-            return View(await applicationDbContext.ToListAsync());
+			int pageSize = 20;
+            int pageNumber = page;
+            return View(_context.Films.OrderBy(f => f.Name).ToPagedList(pageNumber, pageSize));
         }
 
         // GET: Films/Details/5

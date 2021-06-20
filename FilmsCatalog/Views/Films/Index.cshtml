@@ -1,5 +1,7 @@
-﻿@model IEnumerable<FilmsCatalog.Models.Film>
+﻿@model X.PagedList.IPagedList<FilmsCatalog.Models.Film>
 @using Microsoft.AspNetCore.Identity
+@using X.PagedList.Mvc.Core;
+@using X.PagedList.Mvc.Bootstrap4.Core;
 @inject UserManager<User> userManager
 
 @{
@@ -73,4 +75,8 @@
 			</tr>
 		}
 	</tbody>
-</table>
+	</table>
+<div class="pager-nav-wrapper">
+	Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount
+	@Html.PagedListPager(Model, page => Url.Action("Index", new { page }), Bootstrap4PagedListRenderOptions.ClassicPlusFirstAndLast)
+</div>
