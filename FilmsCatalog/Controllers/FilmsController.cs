@@ -7,16 +7,34 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using FilmsCatalog.Data;
 using FilmsCatalog.Models;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Hosting;
+using System.IO;
+using System.Net.Http.Headers;
+using Microsoft.AspNetCore.Identity;
 
 namespace FilmsCatalog.Controllers
 {
     public class FilmsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<FilmsController> _logger;
+        private readonly IWebHostEnvironment _hostingEnvironment;
+        private readonly UserManager<User> _userManager;
 
-        public FilmsController(ApplicationDbContext context)
+        private static readonly HashSet<string> AllowedExtensions = new HashSet<string> { ".jpg", ".jpeg", ".png" };
+
+        public FilmsController(
+            ApplicationDbContext context, 
+            ILogger<FilmsController> logger,
+            IWebHostEnvironment hostingEnvironment,
+            UserManager<User> userManager
+            )
         {
             _context = context;
+            _logger = logger;
+            _hostingEnvironment = hostingEnvironment;
+            _userManager = userManager;
         }
 
         // GET: Films
@@ -48,8 +66,7 @@ namespace FilmsCatalog.Controllers
         // GET: Films/Create
         public IActionResult Create()
         {
-            ViewData["UserSenderId"] = new SelectList(_context.Users, "Id", "Id");
-            return View();
+            return View(new FilmViewModel());
         }
 
         // POST: Films/Create
@@ -57,17 +74,45 @@ namespace FilmsCatalog.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,Description,ReleaseYear,Director,UserSenderId,PosterName,PosterPath")] Film film)
+        public async Task<IActionResult> Create(FilmViewModel model)
         {
+            bool posterAdded = model.PosterPhoto != null;
+            string fileName = null;
+            string fileExt = null;
+            if (posterAdded) {
+                fileName = Path.GetFileName(ContentDispositionHeaderValue.Parse(model.PosterPhoto.ContentDisposition).FileName.Trim('"'));
+                fileExt = Path.GetExtension(fileName);
+                if (!AllowedExtensions.Contains(fileExt))
+                {
+                    ModelState.AddModelError(nameof(model.PosterPhoto), "This file type is prohibited");
+                }
+            }
             if (ModelState.IsValid)
             {
-                film.Id = Guid.NewGuid();
+                var film = new Film
+                {
+                    Name = model.Name,
+                    Description = model.Description,
+                    ReleaseYear = model.ReleaseYear,
+                    Director = model.Director,
+                    UserSenderId = _userManager.GetUserId(HttpContext.User)
+                };
+
+                if (posterAdded) {
+                    film.PosterName = fileName;
+                    var posterPath = Path.Combine(_hostingEnvironment.WebRootPath, "attachments", film.Id.ToString("N") + fileExt);
+                    film.PosterPath = $"/attachments/{film.Id:N}{fileExt}";
+                    using (var fileStream = new FileStream(posterPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.Read))
+                    {
+                        await model.PosterPhoto.CopyToAsync(fileStream);
+                    }
+                }
+
                 _context.Add(film);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["UserSenderId"] = new SelectList(_context.Users, "Id", "Id", film.UserSenderId);
-            return View(film);
+            return View(model);
         }
 
         // GET: Films/Edit/5
