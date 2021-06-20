@@ -113,6 +113,9 @@ namespace FilmsCatalog.Controllers
             {
                 return NotFound();
             }
+            if (film.UserSenderId != _userManager.GetUserId(HttpContext.User)) {
+                return Forbid();
+			}
             ViewBag.PosterPath = film.PosterPath;
             return View(new FilmViewModel
             {
@@ -139,6 +142,10 @@ namespace FilmsCatalog.Controllers
             if (film == null)
             {
                 return NotFound();
+            }
+            if (film.UserSenderId != _userManager.GetUserId(HttpContext.User))
+            {
+                return Forbid();
             }
             (bool posterAdded, string fileName, string fileExt) = GetPosterInfo(model);
             if (posterAdded && !AllowedExtensions.Contains(fileExt))
