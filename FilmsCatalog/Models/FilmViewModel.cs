@@ -10,19 +10,18 @@ namespace FilmsCatalog.Models
 {
 	public class FilmViewModel
 	{
-		[Required]
+		[Required(ErrorMessage = "Обязательное поле")]
 		[DisplayName("Название")]
 		public String Name { get; set; }
 
-		[Required]
+		[Required(ErrorMessage = "Обязательное поле")]
 		[DisplayName("Описание")]
 		public String Description { get; set; }
 
 		[DisplayName("Год выпуска")]
-		/*[DisplayFormat(DataFormatString = "{yyyy}", ApplyFormatInEditMode = true)]*/
 		public DateTime ReleaseYear { get; set; }
 
-		[Required]
+		[Required(ErrorMessage = "Обязательное поле")]
 		[DisplayName("Режиссёр")]
 		public String Director { get; set; }
 
